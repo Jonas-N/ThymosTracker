@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Mood Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="text-center">
+        <h1 id="dateDisplay" class="text-4xl font-bold mb-4"></h1>
+        <div id="moodDisplay" class="text-6xl font-bold"></div>
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+        <button id="selectFileBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Select Mood CSV</button>
+    </div>
+
+    <script>
+        // Get today's date in YYYY-MM-DD format
+        const formatDate = (date) => {
+            return date.toISOString().split('T')[0];
+        };
+
+        // Format date for human-readable display
+        const formatDisplayDate = (date) => {
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        };
+
+        const today = new Date();
+        const todayFormatted = formatDate(today);
+        const todayDisplayFormatted = formatDisplayDate(today);
+
+        // Display today's date
+        document.getElementById('dateDisplay').textContent = todayDisplayFormatted;
+
+        // File selection button
+        const fileInput = document.getElementById('csvFileInput');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const moodDisplay = document.getElementById('moodDisplay');
+
+        selectFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const csvText = await file.text();
+                    processMoodData(csvText, file);
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    alert('Could not read the CSV file.');
+                }
+            }
+        });
+
+        function processMoodData(csvText, file) {
+            const lines = csvText.trim().split('\n');
+            
+            // Check if today's date exists in the CSV
+            const todayEntry = lines.find(line => line.startsWith(todayFormatted));
+            
+            if (todayEntry) {
+                // If entry exists, display the mood score
+                const moodScore = todayEntry.split(',')[2];
+                moodDisplay.textContent = moodScore;
+            } else {
+                // If no entry, create an input field
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = 1;
+                input.max = 10;
+                input.className = 'text-6xl text-center w-full border-b-2 border-gray-400 focus:outline-none focus:border-blue-500';
+                input.placeholder = 'Enter mood (1-10)';
+                
+                input.addEventListener('change', async (e) => {
+                    const moodScore = e.target.value;
+                    if (moodScore >= 1 && moodScore <= 10) {
+                        // Prepare new CSV line
+                        const newLine = `\n${todayFormatted},${new Date().toLocaleTimeString()},${moodScore},`;
+                        
+                        try {
+                            // Write to file
+                            const updatedContent = csvText + newLine;
+                            
+                            // Create a new Blob with updated content
+                            const blob = new Blob([updatedContent], { type: 'text/csv' });
+                            
+                            // Create a download link
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = URL.createObjectURL(blob);
+                            downloadLink.download = file.name;
+                            downloadLink.click();
+                            
+                            // Update display
+                            moodDisplay.innerHTML = moodScore;
+                        } catch (error) {
+                            console.error('Error updating file:', error);
+                            alert('Could not update the CSV file.');
+                        }
+                    } else {
+                        alert('Please enter a mood score between 1 and 10');
+                    }
+                });
+                
+                // Replace mood display with input
+                moodDisplay.innerHTML = '';
+                moodDisplay.appendChild(input);
+                input.focus();
+            }
+        }
+    </script>
+</body>
+</html>
