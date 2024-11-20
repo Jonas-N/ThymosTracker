@@ -16,11 +16,25 @@
     </style>
 </head>
 <body class="bg-gray-100">
-    <div class="text-center">
+    <div class="text-center w-full max-w-md mx-auto">
         <h1 id="dateDisplay" class="text-4xl font-bold mb-4"></h1>
-        <div id="moodDisplay" class="text-6xl font-bold"></div>
-        <input type="file" id="csvFileInput" accept=".csv" class="hidden">
-        <button id="selectFileBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Select Mood CSV</button>
+        <input 
+            type="file" 
+            id="csvFileInput" 
+            accept=".csv" 
+            class="hidden" 
+            required
+        >
+        <div id="moodContainer" class="text-6xl font-bold">
+            <input 
+                type="number" 
+                id="moodInput" 
+                min="1" 
+                max="10" 
+                class="w-full text-center border-b-4 border-gray-400 focus:border-blue-500 focus:outline-none"
+                placeholder="Enter mood (1-10)"
+            >
+        </div>
     </div>
 
     <script>
@@ -46,12 +60,13 @@
         // Display today's date
         document.getElementById('dateDisplay').textContent = todayDisplayFormatted;
 
-        // File selection button
+        // Elements
         const fileInput = document.getElementById('csvFileInput');
-        const selectFileBtn = document.getElementById('selectFileBtn');
-        const moodDisplay = document.getElementById('moodDisplay');
+        const moodInput = document.getElementById('moodInput');
+        const moodContainer = document.getElementById('moodContainer');
 
-        selectFileBtn.addEventListener('click', () => {
+        // Prompt for CSV file on page load
+        window.addEventListener('load', () => {
             fileInput.click();
         });
 
@@ -77,17 +92,13 @@
             if (todayEntry) {
                 // If entry exists, display the mood score
                 const moodScore = todayEntry.split(',')[2];
-                moodDisplay.textContent = moodScore;
+                moodContainer.innerHTML = `<div class="text-6xl">${moodScore}</div>`;
             } else {
-                // If no entry, create an input field
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.min = 1;
-                input.max = 10;
-                input.className = 'text-6xl text-center w-full border-b-2 border-gray-400 focus:outline-none focus:border-blue-500';
-                input.placeholder = 'Enter mood (1-10)';
-                
-                input.addEventListener('change', async (e) => {
+                // Set up mood input
+                moodInput.value = '';
+                moodInput.focus();
+
+                moodInput.addEventListener('change', async (e) => {
                     const moodScore = e.target.value;
                     if (moodScore >= 1 && moodScore <= 10) {
                         // Prepare new CSV line
@@ -107,7 +118,7 @@
                             downloadLink.click();
                             
                             // Update display
-                            moodDisplay.innerHTML = moodScore;
+                            moodContainer.innerHTML = `<div class="text-6xl">${moodScore}</div>`;
                         } catch (error) {
                             console.error('Error updating file:', error);
                             alert('Could not update the CSV file.');
@@ -116,11 +127,6 @@
                         alert('Please enter a mood score between 1 and 10');
                     }
                 });
-                
-                // Replace mood display with input
-                moodDisplay.innerHTML = '';
-                moodDisplay.appendChild(input);
-                input.focus();
             }
         }
     </script>
